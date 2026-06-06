@@ -1,42 +1,29 @@
 name: 打包Mac接口文档生成器
-# 手动触发打包，不用提交代码也能跑
 on: workflow_dispatch
+# 解决Node版本兼容警告
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   build_macos:
-    runs-on: macos-latest # Github免费Mac云主机
+    runs-on: macos-latest
     steps:
       - name: 拉取项目代码
-        uses: actions/checkout@v4
-      - name: 配置Python3.10
-        uses: actions/setup-python@v5
+        uses: actions/checkout@v5
+      - name: 配置Python环境
+        uses: actions/setup-python@v6
         with:
           python-version: "3.10"
-      - name: 安装项目依赖
+      - name: 安装依赖
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: PyInstaller打包Mac APP（无黑框GUI）
+      - name: 打包Mac GUI应用
         run: |
           rm -rf build dist
-          # --windowed：Mac桌面GUI程序（不弹出终端黑窗口）；--name：应用名称
+          # 打包无终端黑框的Mac桌面应用
           pyinstaller --windowed --noconsole --name 接口文档生成器 createDocuments.py
-      - name: 生成Mac安装镜像DMG
-        run: |
-          brew install create-dmg
-          create-dmg \
-            --volname "接口文档生成器" \
-            --window-pos 200 120 \
-            --window-size 650 400 \
-            --icon-size 90 \
-            --icon "接口文档生成器.app" 180 130 \
-            --hide-extension "接口文档生成器.app" \
-            --app-drop-link 430 130 \
-            "接口文档生成器_mac.dmg" \
-            dist/接口文档生成器.app
-      - name: 上传打包产物（可下载）
+      - name: 上传打包好的App
         uses: actions/upload-artifact@v4
         with:
           name: Mac打包成品
-          path: |
-            dist/接口文档生成器.app
-            接口文档生成器_mac.dmg
+          path: dist/接口文档生成器.app
